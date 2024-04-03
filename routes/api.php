@@ -1,10 +1,45 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\UserController;
 
-Route::post('/register', UserController::class . '@register');
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\CheckIsAdmin;
+use App\Http\Middleware\ExtractTokenFromCookie;
+use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\AdminController;
+
+
+Route::post('register',[UserController::class, 'register']);
+
+Route::post('login',[UserController::class, 'login']);
+
+Route::middleware([ExtractTokenFromCookie::class,CheckIsAdmin::class, 'auth:api'])
+    ->group(function () {
+        // Your routes here
+
+
+    });
+
+
+
+    // Route::middleware([ExtractTokenFromCookie::class,CheckIsAdmin::class, 'auth:api'])
+    // ->group(function () {
+    //     // Your routes here
+    //     Route::post('register',[AdminController::class, 'register']);
+    // });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Route::get('/user', function (Request $request) {
+//     return $request->user();
+// })->middleware('auth:api');
