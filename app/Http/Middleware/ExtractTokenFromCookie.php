@@ -17,9 +17,9 @@ class ExtractTokenFromCookie
     public function handle($request, Closure $next)
     {
         // Check if the cookie exists
-        if ($request->hasCookie('token')) {
+        if ($request->hasCookie('auth_token')) {
             // Get the token from the cookie
-            $token = Cookie::get('token');
+            $token = Cookie::get('auth_token');
 
             // Set the token to the Authorization header
             $request->headers->set('Authorization', 'Bearer ' . $token);

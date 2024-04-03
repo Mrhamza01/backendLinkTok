@@ -12,10 +12,11 @@ Route::post('register',[UserController::class, 'register']);
 
 Route::post('login',[UserController::class, 'login']);
 
-Route::middleware([ExtractTokenFromCookie::class,CheckIsAdmin::class, 'auth:api'])
+Route::middleware('auth:api')
     ->group(function () {
         // Your routes here
-
+        Route::post('userdetail',[UserController::class, 'userDetail']);
+        Route::post('logout',[UserController::class, 'logout']);
 
     });
 
