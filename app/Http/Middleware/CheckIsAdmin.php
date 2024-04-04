@@ -16,15 +16,30 @@ class CheckIsAdmin
      */
     public function handle($request, Closure $next)
     {
-        // Get the user from the request via the Passport token
-        $user = Auth::user();
+        // Check if the user is authenticated
+        if (Auth::check()) {
+            // Get the authenticated user
+            $user = Auth::user();
+            
+            // Get the requested route
+            $route = $request->path();
+            
+            // Check if the requested route starts with '/admin'
+            if (strpos($route, 'api/admin/') === 0) {
+                // If the user is an admin, allow access to admin routes
+                if ($user->userType === 'admin') {
+                    return $next($request);
+                } else {
+                    // If the user is not an admin, return a 404 error
+                    return response()->json(['error' => 'Not Found'], 404);
+                }
+            }
 
-        // Check if the user is an admin
-        if ($user->isAdmin === 'admin') {
+            // If the requested route is not an admin route, allow access
             return $next($request);
         }
 
-        // If the user is not an admin, return a 404 error
-        return response()->json(['error' => 'Not Found'], 404);
+        // If the user is not authenticated, return a 404 error
+        return response()->json(['error' => 'not authenticated'], 404);
     }
 }

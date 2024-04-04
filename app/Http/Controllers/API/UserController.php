@@ -168,7 +168,7 @@ public function userDetail(Request $request)
         }
 
         // Construct the profile picture URL
-        $profilePictureUrl = Storage::url('public/profile/' . $user->profilePicture);
+        $profilePictureUrl = asset('storage/profile/' . $user->profilePicture);
 
         // Prepare the user details
         $userDetails = [
