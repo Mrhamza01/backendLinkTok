@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
-class posts extends Model
+class Posts extends Model
 {
-    use HasFactory;
+    protected $fillable = [
+        'userId', 'caption', 'media', 'tags', 'location', 'scheduledAt', 'postType', 'is_scheduled'
+    ];
+
+    public function publish()
+    {
+        // Logic to handle the publishing of a post
+        $this->is_scheduled = false;
+        $this->save();
+    }
 }

@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Console\Commands\PublishScheduledPosts;
+use Illuminate\Support\Facades\Schedule;
+
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        $this->commands([
+            PublishScheduledPosts::class,
+        ]);
+
+        Schedule::command('posts:publish')->everyMinute();
     
 
     }
