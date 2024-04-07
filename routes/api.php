@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\postsController;
+use App\Http\Controllers\API\FollowController;
 
 use App\Http\Controllers\API\AdminController;
 
@@ -22,7 +23,14 @@ Route::middleware('auth:api')
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::post('getuserposts',[postsController::class, 'getUserPosts']);
 
-        
+        // FollowRequestController routes
+        Route::post('sendrequest', [FollowController::class, 'sendRequest']);
+        Route::get('unfollow', [FollowController::class, 'unfollow']);
+        // Route::post('acceptrequest', [FollowController::class, 'acceptRequest']);
+        // Route::post('cancelrequest', [FollowController::class, 'cancelRequest']);
+        Route::get('getfollowing', [FollowController::class, 'getFollowing']);
+        Route::get('getfollowers', [FollowController::class, 'getFollowers']);
+
 
     });
 
