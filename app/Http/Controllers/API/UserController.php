@@ -83,6 +83,9 @@ public function login(Request $request)
     // Get the currently authenticated user
     $user = Auth::user();
 
+
+    // Update the isActive column to 1
+    $user->update(['isActive' => 1]);
     // Create a token for the user
     $token = $user->createToken('auth_token')->accessToken;
 
@@ -187,6 +190,11 @@ public function userDetail(Request $request)
 
     public function logout(Request $request)
     {
+
+
+        $user = Auth::user();
+        $user->update(['isActive' => 0]);
+
         // Get the token that the user is currently authenticated with
         $token = $request->user()->token();
     
@@ -196,6 +204,7 @@ public function userDetail(Request $request)
         // Forget the cookie
         $cookie = Cookie::forget('auth_token');
     
+        // Update the isActive column to 1
         // Return a response indicating the user has been logged out
         return response([
             'message' => 'Logout successful',

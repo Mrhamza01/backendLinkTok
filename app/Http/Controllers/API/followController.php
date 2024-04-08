@@ -21,7 +21,7 @@ class followController extends Controller
                 return response()->json(['error' => 'User not found'], 404);
             }
     
-            // 2. Retrieve Follower Data
+            // 2. Retrieve Following Data
             $followers = DB::table('follows')
                 ->where('user_id', $user->id)
                 // ->where('status_target_id', 'recieved')

@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('storys', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('userId');
+            $table->unsignedBigInteger('user_Id');
             $table->string('media');
             $table->dateTimeTz('expiresAt');
             $table->timestamps();
-        });
+      
 
+        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+    });
     }
 
     /**
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('story');
+        Schema::dropIfExists('storys');
     }
 };

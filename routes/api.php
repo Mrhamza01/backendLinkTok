@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\postsController;
 use App\Http\Controllers\API\FollowController;
+use App\Http\Controllers\API\storyController;
 
 use App\Http\Controllers\API\AdminController;
 
@@ -18,10 +19,18 @@ Route::post('login',[UserController::class, 'login']);
 Route::middleware('auth:api')
     ->group(function () {
         // Your routes here
-        Route::post('userdetail',[UserController::class, 'userDetail']);
+        Route::get('userdetail',[UserController::class, 'userDetail']);
         Route::post('logout',[UserController::class, 'logout']);
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::post('getuserposts',[postsController::class, 'getUserPosts']);
+
+
+        //storyController routes
+        Route::post('createstory',[storyController::class, 'createStory']);
+        Route::post('viewstory',[storyController::class, 'viewStory']);
+
+
+
 
         // FollowRequestController routes
         Route::post('sendrequest', [FollowController::class, 'sendRequest']);

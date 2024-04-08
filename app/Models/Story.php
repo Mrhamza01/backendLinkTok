@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Story extends Model
 {
     use HasFactory;
-    protected $fillable = ['userId', 'media', 'expiresAt'];
 
+    protected $table = 'storys';
+
+    protected $fillable = ['user_Id', 'media', 'expiresAt'];
+
+    // public function user()
+    // {
+    //     return $this->belongsTo(User::class, 'user_Id');
+    // }
 }
