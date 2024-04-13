@@ -67,12 +67,17 @@ class UserController extends Controller
 
 public function login(Request $request)
 {
-    // Validate the request
-    $request->validate([
-        'email' => 'required|string', // Assuming you're using 'username' field
-        'password' => 'required|string',
+   
+
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'password' => 'required|',
     ]);
 
+    if ($validator->fails()) {
+        // Return validation errors as JSON response
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
     // Attempt to authenticate the user
     if (!Auth::attempt($request->only('email', 'password'))) {
         throw ValidationException::withMessages([
@@ -99,6 +104,7 @@ public function login(Request $request)
         'redirect' => '/',
     ])->withCookie($cookie);
 }
+
 
 
 
@@ -182,6 +188,7 @@ public function userDetail(Request $request)
             'isActive' => $user->isActive
         ];
 
+        
         // Return the user details as a JSON response
         return response()->json($userDetails);
     }
