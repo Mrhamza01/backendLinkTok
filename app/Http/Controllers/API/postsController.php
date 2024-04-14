@@ -75,7 +75,7 @@ $post->postType = ($extension === 'jpg' || $extension === 'jpeg' || $extension =
         // Commit the transaction
         DB::commit();
 
-        return response()->json(['message' => 'Post created successfully!', 'post' => $post], 201);
+        return response()->json(['message' => 'Post created successfully!'], 201);
     } catch (\Exception $e) {
         // Rollback the transaction
         DB::rollBack();

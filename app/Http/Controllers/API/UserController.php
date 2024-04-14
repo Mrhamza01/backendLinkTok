@@ -107,66 +107,6 @@ public function login(Request $request)
 
 
 
-
-
-
-
-// public function sendResetLink(Request $request)
-// {
-//     $request->validate(['email' => 'required|email']);
-
-//     $user = User::where('email', $request->email)->first();
-//     if (!$user) {
-//         return response()->json(['message' => 'User not found'], 404);
-//     }
-
-//     // Generate a unique token
-//     $token = Str::random(60);
-
-//     // Save the token in the password_reset_tokens table
-//     PasswordResetToken::updateOrCreate(
-//         ['email' => $user->email],
-//         ['token' => $token, 'created_at' => now()]
-//     );
-
-//     // Send the reset link to the user's email
-//     // You can use Laravel's built-in Mail functionality here
-//     // Example: Mail::to($user->email)->send(new ResetPasswordMail($token));
-//     Mail::to($user->email)->send(new ResetPasswordMail($user, $token));
-
-
-//     return response()->json(['message' => 'Password reset link sent']);
-// }
-
-
-// public function resetPassword(Request $request)
-// {
-//     $request->validate([
-//         'email' => 'required|email',
-//         'token' => 'required',
-//         'password' => 'required|confirmed|min:8',
-//     ]);
-
-//     $tokenRecord = PasswordResetToken::where('email', $request->email)
-//         ->where('token', $request->token)
-//         ->first();
-
-//     if (!$tokenRecord) {
-//         return response()->json(['message' => 'Invalid token'], 400);
-//     }
-
-//     $user = User::where('email', $request->email)->first();
-//     $user->update(['password' => bcrypt($request->password)]);
-
-//     // Delete the used token
-//     $tokenRecord->delete();
-
-//     return response()->json(['message' => 'Password reset successful']);
-// }
-
-
-
-
 public function userDetail(Request $request)
     {
         // Retrieve the authenticated user based on the token

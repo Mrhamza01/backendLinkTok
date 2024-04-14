@@ -22,7 +22,7 @@ Route::middleware('auth:api')
         Route::get('userdetail',[UserController::class, 'userDetail']);
         Route::post('logout',[UserController::class, 'logout']);
         Route::post('createpost',[postsController::class, 'createPost']);
-        Route::post('getuserposts',[postsController::class, 'getUserPosts']);
+        Route::get('getuserposts',[postsController::class, 'getUserPosts']);
 
 
         //storyController routes
