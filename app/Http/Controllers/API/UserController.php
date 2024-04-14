@@ -49,7 +49,8 @@ class UserController extends Controller
             DB::commit();
 
             // Return a success response
-            return response()->json(['message' => 'User registered successfully']);
+            return response()->json(['message' => 'User registered successfully',        'redirect' => '/signin'
+        ]);
         } catch (\Exception $e) {
             // Handle other exceptions and roll back the transaction
             DB::rollBack();

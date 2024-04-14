@@ -27,7 +27,7 @@ Route::middleware('auth:api')
 
         //storyController routes
         Route::post('createstory',[storyController::class, 'createStory']);
-        Route::post('viewstory',[storyController::class, 'viewStory']);
+        Route::get('viewstory',[storyController::class, 'viewStory']);
 
 
 
