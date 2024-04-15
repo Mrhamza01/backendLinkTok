@@ -20,6 +20,7 @@ Route::middleware('auth:api')
     ->group(function () {
         // Your routes here
         Route::get('userdetail',[UserController::class, 'userDetail']);
+        Route::get('search',[UserController::class, 'search']);
         Route::post('logout',[UserController::class, 'logout']);
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::get('getuserposts',[postsController::class, 'getUserPosts']);
@@ -34,7 +35,7 @@ Route::middleware('auth:api')
 
         // FollowRequestController routes
         Route::post('sendrequest', [FollowController::class, 'sendRequest']);
-        Route::get('unfollow', [FollowController::class, 'unfollow']);
+        Route::post('unfollow', [FollowController::class, 'unfollow']);
         // Route::post('acceptrequest', [FollowController::class, 'acceptRequest']);
         // Route::post('cancelrequest', [FollowController::class, 'cancelRequest']);
         Route::get('getfollowing', [FollowController::class, 'getFollowing']);

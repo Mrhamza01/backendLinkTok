@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Validation\ValidationException;
+use App\Models\Follow;
+
 // use Illuminate\Support\Facades\Mail;
 // use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Facades\Storage;
@@ -160,6 +162,39 @@ public function userDetail(Request $request)
     }
     
 
+
+
+    public function search(Request $request)
+{
+    // Validate the incoming search text.
+    $validatedData = $request->validate([
+        'searchText' => 'required|string|min:3',
+    ]);
+
+    // Get the current authenticated user's ID.
+    $currentUserId = auth()->id();
+
+    // Check if the current user is following each user in the search results.
+   
+
+    // Perform the search query on the users table.
+    $users = User::where('username', 'LIKE', '%' . $validatedData['searchText'] . '%')
+                  ->get(['id', 'username','profilePicture']);
+    
+    $users->each(function ($user) use ($currentUserId) {
+        $user->isFollowing = Follow::where('user_id', $currentUserId)
+            ->where('target_id', $user->id)
+            ->exists();
+                });              
+
+    // Append the profile picture URL to each user.
+    $users->each(function ($user) {
+        $user->profilePictureUrl = asset('storage/profile/' . $user->profilePicture);
+    });
+
+    // Return the JSON response.
+    return response()->json(["search"=>$users]);
+}
 
 
     
