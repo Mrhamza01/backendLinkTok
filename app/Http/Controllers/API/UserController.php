@@ -127,7 +127,7 @@ public function userDetail(Request $request)
             'username' => $user->username,
             'email' => $user->email,
             'profilePictureURL' => $profilePictureUrl,
-            'userBio' => $user->bio,
+            'userBio' => $user->userBio,
             'isActive' => $user->isActive
         ];
 
@@ -135,6 +135,60 @@ public function userDetail(Request $request)
         // Return the user details as a JSON response
         return response()->json($userDetails);
     }
+
+
+
+    
+function updateDetails(Request $request){
+    $user = Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+
+    // Validate input data
+    $validator = Validator::make($request->all(), [
+        'bio' => 'nullable|string|max:100',
+        'media' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    DB::beginTransaction(); // Start a new database transaction
+
+    try {
+        // Update userBio if provided
+        if ($request->has('bio')) {
+            $user->userBio = $request->bio;
+        }
+
+         // Update profilePicture if provided
+         // Update profilePicture if provided
+         if ($request->hasFile('media')) {
+            $filename = $request->file('media')->getClientOriginalName();
+            $uniqueFilename = 'profile_' . time() . '.' . $filename;
+            $filePath = $request->file('media')->storeAs('profile', $uniqueFilename, 'public');
+            $user->profilePicture = $uniqueFilename;
+        }
+
+        $user->save(); // Save the changes
+
+        DB::commit(); // Commit the transaction
+
+        // Log success
+
+
+        return response()->json(['message' => 'Details updated successfully']);
+    } catch (\Exception $e) {
+        DB::rollBack(); // Rollback the transaction on error
+
+        // Log error
+
+        return response()->json(['error' => 'Update failed', 'message' => $e->getMessage()], 500);
+    }
+}
 
 
 

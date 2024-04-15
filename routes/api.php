@@ -20,6 +20,7 @@ Route::middleware('auth:api')
     ->group(function () {
         // Your routes here
         Route::get('userdetail',[UserController::class, 'userDetail']);
+        Route::Post('updatedetails',[UserController::class, 'updateDetails']);
         Route::get('search',[UserController::class, 'search']);
         Route::post('logout',[UserController::class, 'logout']);
         Route::post('createpost',[postsController::class, 'createPost']);
