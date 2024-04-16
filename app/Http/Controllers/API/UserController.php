@@ -98,15 +98,13 @@ public function login(Request $request)
     $token = $user->createToken('auth_token')->accessToken;
 
 
-    // Set the token as a cookie (optional)
-    $cookie = Cookie::make('auth_token', $token, 60 * 24 * 7); // 1 week
-
     // Return a successful response with the token
     return response([
         'message' => 'Login successful',
         'redirect' => '/home',
         'token'=>$token,
-    ])->withCookie($cookie);
+
+    ]);
 }
 
 
@@ -207,13 +205,13 @@ function updateDetails(Request $request){
         $token->revoke();
     
         // Forget the cookie
-        $cookie = Cookie::forget('auth_token');
+        
     
         // Update the isActive column to 1
         // Return a response indicating the user has been logged out
         return response([
             'message' => 'Logout successful',
-        ])->withCookie($cookie);
+        ]);
     }
     
 
