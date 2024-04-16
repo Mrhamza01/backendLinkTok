@@ -103,7 +103,11 @@ public function login(Request $request)
         'message' => 'Login successful',
         'redirect' => '/home',
         'token'=>$token,
+<<<<<<< HEAD
     ]);
+=======
+    ])->withCookie($cookie);
+>>>>>>> development
 }
 
 
