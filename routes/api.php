@@ -23,8 +23,19 @@ Route::middleware('auth:api')
         Route::Post('updatedetails',[UserController::class, 'updateDetails']);
         Route::get('search',[UserController::class, 'search']);
         Route::post('logout',[UserController::class, 'logout']);
+
+
+
+        //post routes
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::get('getuserposts',[postsController::class, 'getUserPosts']);
+        Route::get('viewfollowingpost',[postsController::class, 'viewFollowingPost']);
+        Route::post('likepost',[postsController::class, 'likePost']);
+        Route::get('countlikes',[postsController::class, 'countLikes']);
+        Route::post('createcomment',[postsController::class, 'createComment']);
+        Route::get('countcomments',[postsController::class, 'countComments']);
+
+
 
 
         //storyController routes
@@ -37,8 +48,6 @@ Route::middleware('auth:api')
         // FollowRequestController routes
         Route::post('sendrequest', [FollowController::class, 'sendRequest']);
         Route::post('unfollow', [FollowController::class, 'unfollow']);
-        // Route::post('acceptrequest', [FollowController::class, 'acceptRequest']);
-        // Route::post('cancelrequest', [FollowController::class, 'cancelRequest']);
         Route::get('getfollowing', [FollowController::class, 'getFollowing']);
         Route::get('getfollowers', [FollowController::class, 'getFollowers']);
 
