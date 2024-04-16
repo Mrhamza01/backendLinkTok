@@ -105,6 +105,7 @@ public function login(Request $request)
     return response([
         'message' => 'Login successful',
         'redirect' => '/home',
+        'token'=>$token,
     ])->withCookie($cookie);
 }
 
