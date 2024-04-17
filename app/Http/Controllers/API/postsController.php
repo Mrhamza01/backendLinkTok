@@ -189,6 +189,8 @@ class postsController extends Controller
                     'username' => $username,
                     'profile_picture' => $profilePicture,
                     'post_id' => $post->id,
+                    'likes' => $post->likes,
+                    'comments' => $post->comments,
                     'mediaURL' => $mediaUrl,
                     'profilePictureUrl' => $profilePictureUrl,
                     'like_count' => $post->likes,
