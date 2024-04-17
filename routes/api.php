@@ -34,6 +34,8 @@ Route::middleware('auth:api')
         Route::get('countlikes',[postsController::class, 'countLikes']);
         Route::post('createcomment',[postsController::class, 'createComment']);
         Route::get('countcomments',[postsController::class, 'countComments']);
+        Route::get('viewcomments',[postsController::class, 'viewcomments']);
+
 
 
 
