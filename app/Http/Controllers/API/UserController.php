@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Validation\ValidationException;
 use App\Models\Follow;
+use App\Models\Report;
+
 
 // use Illuminate\Support\Facades\Mail;
 // use App\Mail\ResetPasswordMail;
@@ -248,6 +250,61 @@ function updateDetails(Request $request){
     // Return the JSON response.
     return response()->json(["search"=>$users]);
 }
+
+
+
+
+
+function createReport(Request $request)
+{
+    // Start a database transaction
+
+    $validator = Validator::make($request->all(), [
+        'user_id' => 'required|integer|exists:users,id',
+        'post_id' => 'required|integer|exists:posts,id',
+        'reason' => 'required|string|max:255',
+    ]);
+
+    // If validation fails, return errors with 422 status code
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    DB::beginTransaction();
+
+    try {
+        // Validate the request data
+        
+
+        // Get the authenticated user
+        $authUser = Auth::user();
+
+        // Create a new report with the validated data
+        $report = new Report();
+        $report->reported_for = $request->user_id;
+        $report->post_id = $request->post_id;
+        $report->reported_by = $authUser->id;
+        $report->reason = $request->reason;
+        $report->save();
+
+        // Commit the transaction
+        DB::commit();
+
+        // Return a success response
+        return response()->json(['message' => 'Reported successfully'], 200);
+    } catch (\Exception $e) {
+        // Rollback the transaction on error
+        DB::rollback();
+
+        // Return an error response
+        return response()->json(['error' => 'An error occurred while creating the report'], 500);
+    }
+}
+
+
+
+
+
 
 
     

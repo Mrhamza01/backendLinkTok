@@ -23,9 +23,9 @@ Route::middleware('auth:api')
         Route::Post('updatedetails',[UserController::class, 'updateDetails']);
         Route::get('search',[UserController::class, 'search']);
         Route::post('logout',[UserController::class, 'logout']);
+        Route::post('createreport',[UserController::class, 'createReport']);
 
-
-
+     
         //post routes
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::get('getuserposts',[postsController::class, 'getUserPosts']);
@@ -57,6 +57,20 @@ Route::middleware('auth:api')
     });
 
 
+    // Route::prefix('admin')->middleware(['auth:api', 'CheckIsAdmin'])->group(function () {
+    Route::prefix('admin')->group(function () {
+        // Admin-specific routes here
+        Route::get('getreports',[AdminController::class, 'getReports']);
+        Route::post('deletereport',[AdminController::class, 'deleteReport']);
+        Route::get('getblockedusers',[AdminController::class, 'getBlockedUsers']);
+        Route::post('blockuser',[AdminController::class, 'blockUser']);
+        Route::post('unblockuser',[AdminController::class, 'unblockUser']);
+        Route::get('getactiveusers',[AdminController::class, 'getActiveUsers']);
+        Route::get('getinactiveusers',[AdminController::class, 'getInactiveUsers']);
+        
+        
+        // Add more admin routes as needed
+    });
 
     // Route::middleware([ExtractTokenFromCookie::class,CheckIsAdmin::class, 'auth:api'])
     // ->group(function () {

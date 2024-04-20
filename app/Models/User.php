@@ -25,6 +25,7 @@ class User extends Authenticatable
         'profilePicture',
         'userBio',
         'isActive',
+       
         
     ];
 
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'userType',
+        'isblocked'
     ];
 
     /**
