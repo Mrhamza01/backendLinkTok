@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Report;
+use App\Models\post;
 use App\Models\User;
 class AdminController extends Controller
 {
@@ -143,6 +144,33 @@ public function blockUser(Request $request)
     return response()->json(['message' => 'User blocked successfully'], 200);
 }
 
+
+
+
+public function blockPost(Request $request)
+{
+    // Retrieve the post_id from the request
+    $postId = $request->post_id;
+
+    // Find the post by id
+    $post = Post::find($postId);
+    if (!$post) {
+        // Return an error response if no post was found
+        return response()->json(['error' => 'Post not found'], 404);
+    }
+
+    // Check if the post is already blocked
+    if ($post->isblocked) {
+        return response()->json(['error' => 'Post is already blocked'], 403);
+    }
+
+    // Set isblocked to true and save the post
+    $post->isblocked = true;
+    $post->save();
+
+    // Return a success response
+    return response()->json(['message' => 'Post blocked successfully'], 200);
+}
 
 
 // Function to unblock a user

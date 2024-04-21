@@ -64,6 +64,8 @@ Route::middleware('auth:api')
         Route::post('deletereport',[AdminController::class, 'deleteReport']);
         Route::get('getblockedusers',[AdminController::class, 'getBlockedUsers']);
         Route::post('blockuser',[AdminController::class, 'blockUser']);
+        Route::post('blockpost',[AdminController::class, 'blockPost']);
+
         Route::post('unblockuser',[AdminController::class, 'unblockUser']);
         Route::get('getactiveusers',[AdminController::class, 'getActiveUsers']);
         Route::get('getinactiveusers',[AdminController::class, 'getInactiveUsers']);
