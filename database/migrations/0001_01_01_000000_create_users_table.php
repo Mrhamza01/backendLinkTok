@@ -18,8 +18,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('profilePicture')->default('default.png');
             $table->string('userBio')->nullable();
-            $table->tinyInteger('isActive')->default(0);
-            $table->enum('userType',['admin','user'])->default('user');
+            $table->boolean('isActive')->default(false);
+            $table->boolean('isAdmin')->default(false);
+            $table->boolean('isblocked')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });
