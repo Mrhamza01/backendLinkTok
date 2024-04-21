@@ -35,6 +35,13 @@ class AdminController extends Controller
     
         // Combine the data
         $combinedReports = $reports->map(function ($report) use ($reportedByUsers, $reportedForUsers, $posts) {
+            $post = $posts->where('id', $report->post_id)->first();
+            $reportedForUser = $reportedForUsers->where('id', $report->reported_for)->first();
+    
+            // Add the full URL for the post media file
+            $postMediaURL = $post->media ? asset("storage/{$reportedForUser->id}/posts/" . $post->media) : null;
+        
+          
             return [
                 'reportId' => $report->id,
                 'reportedById' => $report->reported_by,
@@ -44,6 +51,7 @@ class AdminController extends Controller
                 'reportedForUsername' => $reportedForUsers->where('id', $report->reported_for)->first()->username,
                 'reportedForProfilePic' => asset('storage/profile/' . $reportedForUsers->where('id', $report->reported_for)->first()->profilePicture),
                 'post' => $posts->where('id', $report->post_id)->first(),
+                'mediaUrl' => $postMediaURL,
                 'reason' => $report->reason,
             ];
         });
@@ -110,19 +118,32 @@ public function blockUser(Request $request)
     // Retrieve the user_id from the request
     $userId = $request->user_id;
 
-    // Find the user by id and set isblocked to true
+    // Find the user by id
     $user = User::find($userId);
-    if ($user) {
-        $user->isblocked = true;
-        $user->save();
-
-        // Return a success response
-        return response()->json(['message' => 'User blocked successfully'], 200);
-    } else {
+    if (!$user) {
         // Return an error response if no user was found
         return response()->json(['error' => 'User not found'], 404);
     }
+
+    // Check if the user is an admin and prevent blocking
+    if ($user->isAdmin) {
+        return response()->json(['error' => 'Admin users cannot be blocked'], 403);
+    }
+
+    // Set isblocked to true and save the user
+    $user->isblocked = true;
+    $user->save();
+
+    // Revoke all tokens for the user
+    $user->tokens->each(function ($token, $key) {
+        $token->revoke();
+    });
+
+    // Return a success response
+    return response()->json(['message' => 'User blocked successfully'], 200);
 }
+
+
 
 // Function to unblock a user
 public function unblockUser(Request $request)

@@ -35,7 +35,7 @@ Route::middleware('auth:api')
         Route::post('createcomment',[postsController::class, 'createComment']);
         Route::get('countcomments',[postsController::class, 'countComments']);
         Route::get('viewcomments',[postsController::class, 'viewcomments']);
-
+        Route::get('getforyouvideos', [postsController::class, 'getForYouVideos']);
 
 
 
@@ -52,7 +52,7 @@ Route::middleware('auth:api')
         Route::post('unfollow', [FollowController::class, 'unfollow']);
         Route::get('getfollowing', [FollowController::class, 'getFollowing']);
         Route::get('getfollowers', [FollowController::class, 'getFollowers']);
-
+        
 
     });
 

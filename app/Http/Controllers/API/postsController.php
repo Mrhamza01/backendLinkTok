@@ -61,18 +61,15 @@ class postsController extends Controller
             // Check if media is provided
             if ($request->hasFile('media')) {
                 $media = $request->file('media');
-                $mediaName = time() . '_' . strtolower($media->getClientOriginalExtension());
+                $originalExtension = $media->getClientOriginalExtension(); // Get the original file extension
+                $mediaName = time() . '.' . $originalExtension; // Use a dot (.) to append the file extension
                 $folder = "/{$user->id}/posts";
-
-                // Store the file in the local storage
+            
+                // Store the file in the local storage with the original file extension
                 Storage::disk('public')->putFileAs($folder, $media, $mediaName);
-
-                // Get the file extension
-                $extension = strtolower($media->getClientOriginalExtension());
-
+            
                 // Set the post type based on the media type
-                // Set the post type based on the media type
-                $post->postType = ($extension === 'jpg' || $extension === 'jpeg' || $extension === 'png') ? 'photo' : 'video';
+                $post->postType = in_array($originalExtension, ['jpg', 'jpeg', 'png']) ? 'photo' : 'video';
                 $post->media = $mediaName;
             }
 
@@ -330,5 +327,36 @@ class postsController extends Controller
     }
     
 
+
+
+    public function getForYouVideos()
+{
+    $user = Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+
+    // Retrieve a random video post
+    $videoPost = Post::where('postType', 'video')->inRandomOrder()->first();
+
+    // Check if a video post is found
+    if (!$videoPost) {
+        return response()->json(['message' => 'No video for view'], 404);
+    }
+
+    // Create the media URL using the user_id from the post
+    $videoPost->mediaUrl = asset("storage/{$videoPost->userId}/posts/" . $videoPost->media);
+
     
+
+    // Return the video post data along with the media and thumbnail URLs
+    return response()->json([
+        'post' => $videoPost,
+        
+    ]);
+}
+
+
+
 }

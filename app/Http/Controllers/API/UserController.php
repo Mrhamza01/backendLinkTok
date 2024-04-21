@@ -70,45 +70,46 @@ class UserController extends Controller
     
 
 
-public function login(Request $request)
-{
-   
-
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|email',
-        'password' => 'required|',
-    ]);
-
-    if ($validator->fails()) {
-        // Return validation errors as JSON response
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-    // Attempt to authenticate the user
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+    
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+    
+        $user = Auth::user();
+    
+        // Check if the user is blocked
+        if ($user->isblocked) {
+            return response()->json(['errors' => 'You  are  blocked from accessing this platform.'], 403);
+        }
+    
+        // Update the isActive column to 1
+        $user->update(['isActive' => 1]);
+    
+        // Create a token for the user
+        $token = $user->createToken('auth_token')->accessToken;
+    
+        // Determine the redirect path based on whether the user is an admin
+        $redirectPath = $user->isAdmin ? '/admin' : '/home';
+    
+        return response([
+            'message' => 'Login successful',
+            'redirect' => $redirectPath,
+            'token' => $token,
         ]);
     }
-
-    // Get the currently authenticated user
-    $user = Auth::user();
-
-
-    // Update the isActive column to 1
-    $user->update(['isActive' => 1]);
-    // Create a token for the user
-    $token = $user->createToken('auth_token')->accessToken;
-
-
-    // Return a successful response with the token
-    return response([
-        'message' => 'Login successful',
-        'redirect' => '/home',
-        'token'=>$token,
-
-    ]);
-}
-
+    
 
 
 public function userDetail(Request $request)
@@ -258,6 +259,7 @@ function updateDetails(Request $request){
 function createReport(Request $request)
 {
     // Start a database transaction
+    DB::beginTransaction();
 
     $validator = Validator::make($request->all(), [
         'user_id' => 'required|integer|exists:users,id',
@@ -267,21 +269,26 @@ function createReport(Request $request)
 
     // If validation fails, return errors with 422 status code
     if ($validator->fails()) {
+        DB::rollback(); // Ensure to rollback transaction even if validation fails
         return response()->json(['errors' => $validator->errors()], 422);
     }
 
-    DB::beginTransaction();
-
     try {
-        // Validate the request data
-        
+        // Get the user to be reported
+        $reportedUser = User::find($request->user_id);
+
+        // Check if the reported user is an admin
+        if ($reportedUser->isAdmin) {
+            DB::rollback(); // Rollback the transaction as admins cannot be reported
+            return response()->json(['error' => "You can't report an admin"], 403);
+        }
 
         // Get the authenticated user
         $authUser = Auth::user();
 
         // Create a new report with the validated data
         $report = new Report();
-        $report->reported_for = $request->user_id;
+        $report->reported_for = $reportedUser->id;
         $report->post_id = $request->post_id;
         $report->reported_by = $authUser->id;
         $report->reason = $request->reason;
@@ -300,6 +307,7 @@ function createReport(Request $request)
         return response()->json(['error' => 'An error occurred while creating the report'], 500);
     }
 }
+
 
 
 
