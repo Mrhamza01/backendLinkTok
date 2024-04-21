@@ -112,38 +112,28 @@ class postsController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
     
-        // Retrieve all posts from the authenticated user
-        $posts = Post::where('userId', $user->id)->get();
+        // Retrieve all posts from the authenticated user that are not blocked
+        $posts = Post::where('userId', $user->id)->where('isblocked', false)->get();
     
         // Check if the user has posts
         if ($posts->isEmpty()) {
             return response()->json(['message' => 'No posts found for this user'], 404);
         }
     
-        // Update the likes and comments columns for each post
+        // Add the full URL for each media file
         foreach ($posts as $post) {
-            // Count the number of likes and comments for the post
-            // $likeCount = Like::where('post_id', $post->id)->count();
-            // $commentCount = Comment::where('post_id', $post->id)->count();
-    
-            // Update the post with the new like and comment counts
-            // $post->update([
-            //     'likes' => $likeCount,
-            //     'comments' => $commentCount,
-            // ]);
-    
-            // Add the full URL for each media file
             if ($post->media) {
                 $post->mediaUrl = asset("storage/{$user->id}/posts/" . $post->media);
             }
         }
     
-        // Return the updated posts with media URLs, like counts, and comment counts
+        // Return the updated posts with media URLs
         return response()->json([
             'message' => 'Posts retrieved and updated successfully!',
             'posts' => $posts
         ], 200);
     }
+    
     
 
     public function viewFollowingPost()
@@ -156,7 +146,7 @@ class postsController extends Controller
             ->where('user_id', $currentUser->id)
             ->pluck('target_id');
     
-        // Retrieve user IDs and story IDs from the userStory table
+        // Retrieve user IDs and post IDs from the userposts table
         $userPostData = DB::table('userposts')
             ->whereIn('user_id', $targetIds)
             ->select('user_id', 'post_id')
@@ -168,7 +158,8 @@ class postsController extends Controller
             $user = User::find($entry->user_id); // Assuming you have a User model
             $post = Post::find($entry->post_id); // Assuming you have a Post model
     
-            if ($user && $post) {
+            // Check if the user and post exist and the post is not blocked
+            if ($user && $post && !$post->isblocked) {
                 // Create the media URL
                 $mediaUrl = asset("storage/{$user->id}/posts/" . $post->media);
     
@@ -176,10 +167,6 @@ class postsController extends Controller
                 $username = $user->username;
                 $profilePicture = $user->profile_picture; // Assuming 'profile_picture' is the field name
                 $profilePictureUrl = asset('storage/profile/' . $user->profilePicture);
-    
-                // // Count the number of likes and comments for the post
-                // $likeCount = Like::where('post_id', $post->id)->count();
-                // $commentCount = Comment::where('post_id', $post->id)->count();
     
                 $result[] = [
                     'user_id' => $user->id,
@@ -199,6 +186,7 @@ class postsController extends Controller
         // You can customize the response format as needed (e.g., JSON)
         return response()->json(['followingPost' => $result]);
     }
+    
     
 
 
