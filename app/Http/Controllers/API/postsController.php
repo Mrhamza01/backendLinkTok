@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\post;
 use App\Models\User;
 use App\Models\Like;
+use App\Models\Share;
 use App\Models\comment;
-
+use App\Models\Impression;
 
 use App\Models\Userpost;
 
@@ -102,6 +103,43 @@ class postsController extends Controller
 
 
 
+
+
+    public  function getpost(Request $request)
+    {
+        // Retrieve the authenticated user based on the token
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Retrieve the post ID from the request
+        $postId = $request->post_id;
+
+        // Retrieve the post based on the post ID
+        $post = Post::find($postId);
+
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        // Check if the post is blocked
+        if ($post->isblocked) {
+            return response()->json(['error' => 'Post is blocked'], 403);
+        }
+
+        // Add the full URL for the media file
+        if ($post->media) {
+            $post->mediaUrl = asset("storage/{$user->id}/posts/" . $post->media);
+        }
+
+        // Return the post data with the media URL
+        return response()->json([
+            'message' => 'Post retrieved successfully!',
+            'post' => $post
+        ], 200);
+    }
 
     public function getUserPosts(Request $request)
     {
@@ -240,8 +278,7 @@ class postsController extends Controller
 
 
 
-    function createComment(Request $request)
-    {
+    function createComment(Request $request){
         // Validate the request data
         $validator = Validator::make($request->all(), [
             'post_id' => 'required|exists:posts,id',
@@ -315,6 +352,84 @@ class postsController extends Controller
     }
     
 
+
+    public function share(Request $request)
+{
+    // Validate the request data
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|exists:posts,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
+    }
+
+    $postId = $request->post_id;
+    $user = auth()->user();
+
+    // Perform operations within a database transaction
+    DB::transaction(function () use ($postId, $user) {
+        // Check if the post exists
+        $post = Post::find($postId);
+        if (!$post) {
+            throw new \Exception('Post not found');
+        }
+
+        // Save in the shares table
+        $share = new Share([
+            'user_id' => $user->id,
+            'post_id' => $postId,
+        ]);
+        $share->save();
+
+        // Increment the shares column for the post
+        $post->increment('shares');
+
+    });
+
+    return response()->json(['success' => 'Post shared successfully']);
+}
+
+
+
+
+
+public function createImpression(Request $request)
+{
+    // Validate the request data
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|exists:posts,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
+    }
+
+    $postId = $request->post_id;
+    $user = auth()->user();
+
+    // Perform operations within a database transaction
+    DB::transaction(function () use ($postId, $user) {
+        // Check if the post exists
+        $post = Post::find($postId);
+        if (!$post) {
+            throw new \Exception('Post not found');
+        }
+
+        // Save in the shares table
+        $impression = new Impression([
+            'user_id' => $user->id,
+            'post_id' => $postId,
+        ]);
+        $impression->save();
+
+        // Increment the shares column for the post
+        $post->increment('impressions');
+
+    });
+
+    return response()->json(['success' => 'impressions created successfully']);
+}
 
 
     public function getForYouVideos()
