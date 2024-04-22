@@ -23,82 +23,82 @@ use Illuminate\Support\Str;
 class postsController extends Controller
 {
     public function createPost(Request $request)
-    {
-        // Retrieve the authenticated user based on the token
-        $user = Auth::user();
+{
+    // Retrieve the authenticated user based on the token
+    $user = Auth::user();
 
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
-
-        // Validate the request
-        $validator = Validator::make($request->all(), [
-            'caption' => 'required|string',
-            'media' => 'required|file|mimes:jpg,jpeg,png,mp4,mov|max:20480', // 20MB Max
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        // Extract hashtags from caption
-        $caption = $request->caption;
-        $tags = [];
-        preg_match_all('/#(\w+)/', $caption, $tags);
-
-        // Remove hashtags from caption
-        $caption = preg_replace('/#(\w+)/', '', $caption);
-
-        // Begin a transaction
-        DB::beginTransaction();
-
-        try {
-            $post = new post();
-            $post->userId = $user->id;
-            $post->caption = $caption;
-            $post->tags = implode(',', $tags[1]); // Save tags as comma-separated values
-            $post->is_scheduled = false; // Assuming posts are not scheduled by default
-
-            // Check if media is provided
-            if ($request->hasFile('media')) {
-                $media = $request->file('media');
-                $originalExtension = $media->getClientOriginalExtension(); // Get the original file extension
-                $mediaName = time() . '.' . $originalExtension; // Use a dot (.) to append the file extension
-                $folder = "/{$user->id}/posts";
-            
-                // Store the file in the local storage with the original file extension
-                Storage::disk('public')->putFileAs($folder, $media, $mediaName);
-            
-                // Set the post type based on the media type
-                $post->postType = in_array($originalExtension, ['jpg', 'jpeg', 'png']) ? 'photo' : 'video';
-                $post->media = $mediaName;
-            }
-
-            // Save the post
-            $post->save();
-
-            // Now, store the user_id and post_id in the userposts table
-            $userPost = new UserPost(); // Assuming you have a UserPost model
-            $userPost->user_id = $user->id;
-            $userPost->post_id = $post->id; // post_id is automatically set when the post is saved
-            $userPost->save();
-
-            // Commit the transaction
-            DB::commit();
-
-            return response()->json(['message' => 'Post created successfully!'], 201);
-        } catch (\Exception $e) {
-            // Rollback the transaction
-            DB::rollBack();
-
-            // Delete the media if it was stored
-            if (isset($mediaName)) {
-                Storage::disk('local')->delete("{$folder}/{$mediaName}");
-            }
-
-            return response()->json(['message' => 'Failed to create post', 'error' => $e->getMessage()], 500);
-        }
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
     }
+
+    // Validate the request
+    $validator = Validator::make($request->all(), [
+        'caption' => 'required|string',
+        'media' => 'required|file|max:20480', // 20MB Max
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Extract hashtags from caption
+    $caption = $request->caption;
+    $tags = [];
+    preg_match_all('/#(\w+)/', $caption, $tags);
+
+    // Remove hashtags from caption
+    $caption = preg_replace('/#(\w+)/', '', $caption);
+
+    // Begin a transaction
+    DB::beginTransaction();
+
+    try {
+        $post = new Post(); // Correct capitalization
+        $post->userId = $user->id;
+        $post->caption = $caption;
+        $post->tags = implode(',', $tags[1]); // Save tags as comma-separated values
+        $post->is_scheduled = false; // Assuming posts are not scheduled by default
+
+        // Check if media is provided
+        if ($request->hasFile('media')) {
+            $media = $request->file('media');
+            $mediaName = time() . '.' . $media->getClientOriginalExtension();
+            $folder = "/{$user->id}/posts";
+
+            // Store the file in the local storage
+            Storage::disk('public')->putFileAs($folder, $media, $mediaName);
+
+            // Determine the media type based on MIME type
+            $mediaType = $media->getMimeType();
+            $post->postType = strpos($mediaType, 'image') !== false ? 'photo' : 'video';
+            $post->media = $mediaName;
+        }
+
+        // Save the post
+        $post->save();
+
+        // Now, store the user_id and post_id in the userposts table
+        $userPost = new UserPost(); // Assuming you have a UserPost model
+        $userPost->user_id = $user->id;
+        $userPost->post_id = $post->id; // post_id is automatically set when the post is saved
+        $userPost->save();
+
+        // Commit the transaction
+        DB::commit();
+
+        return response()->json(['message' => 'Post created successfully!'], 201);
+    } catch (\Exception $e) {
+        // Rollback the transaction
+        DB::rollBack();
+
+        // Delete the media if it was stored
+        if (isset($mediaName)) {
+            Storage::disk('local')->delete("{$folder}/{$mediaName}");
+        }
+
+        return response()->json(['message' => 'Failed to create post', 'error' => $e->getMessage()], 500);
+    }
+}
 
 
 
@@ -354,42 +354,51 @@ class postsController extends Controller
 
 
     public function share(Request $request)
-{
-    // Validate the request data
-    $validator = Validator::make($request->all(), [
-        'post_id' => 'required|exists:posts,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
-    }
-
-    $postId = $request->post_id;
-    $user = auth()->user();
-
-    // Perform operations within a database transaction
-    DB::transaction(function () use ($postId, $user) {
-        // Check if the post exists
-        $post = Post::find($postId);
-        if (!$post) {
-            throw new \Exception('Post not found');
-        }
-
-        // Save in the shares table
-        $share = new Share([
-            'user_id' => $user->id,
-            'post_id' => $postId,
+    {
+        // Validate the request data
+        $validator = Validator::make($request->all(), [
+            'post_id' => 'required|exists:posts,id',
         ]);
-        $share->save();
-
-        // Increment the shares column for the post
-        $post->increment('shares');
-
-    });
-
-    return response()->json(['success' => 'Post shared successfully']);
-}
-
+    
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
+        }
+    
+        $postId = $request->post_id;
+        $user = auth()->user();
+    
+        // Check if the user has already shared this post
+        $existingShare = Share::where('user_id', $user->id)
+            ->where('post_id', $postId)
+            ->first();
+    
+        if ($existingShare) {
+            // User has already shared this post, no need to add a new entry
+            return response()->json(['success' => 'Post already shared by this user']);
+        }
+    
+        // Perform operations within a database transaction
+        DB::transaction(function () use ($postId, $user) {
+            // Check if the post exists
+            $post = Post::find($postId);
+            if (!$post) {
+                throw new \Exception('Post not found');
+            }
+    
+            // Save in the shares table
+            $share = new Share([
+                'user_id' => $user->id,
+                'post_id' => $postId,
+            ]);
+            $share->save();
+    
+            // Increment the shares column for the post
+            $post->increment('shares');
+        });
+    
+        return response()->json(['success' => 'Post shared successfully']);
+    }
+    
 
 
 
@@ -428,11 +437,11 @@ public function createImpression(Request $request)
 
     });
 
-    return response()->json(['success' => 'impressions created successfully']);
+    return response()->json(['message' => 'impressions created successfully']);
 }
 
 
-    public function getForYouVideos()
+public function getForYouVideos()
 {
     $user = Auth::user();
 
@@ -440,25 +449,27 @@ public function createImpression(Request $request)
         return response()->json(['error' => 'User not found'], 404);
     }
 
-    // Retrieve a random video post
-    $videoPost = Post::where('postType', 'video')->inRandomOrder()->first();
+    // Retrieve all video posts
+    $videoPosts = Post::where('postType', 'video')->get();
 
-    // Check if a video post is found
-    if (!$videoPost) {
-        return response()->json(['message' => 'No video for view'], 404);
+    // Check if video posts are found
+    if ($videoPosts->isEmpty()) {
+        return response()->json(['message' => 'No videos for view'], 404);
     }
+  // Shuffle the collection to randomize the order
+  $shuffledPosts = $videoPosts->shuffle();
 
-    // Create the media URL using the user_id from the post
-    $videoPost->mediaUrl = asset("storage/{$videoPost->userId}/posts/" . $videoPost->media);
+  // Create the media URL for each video post
+  foreach ($shuffledPosts as $videoPost) {
+      $videoPost->mediaUrl = asset("storage/{$videoPost->userId}/posts/" . $videoPost->media);
+  }
 
-    
-
-    // Return the video post data along with the media and thumbnail URLs
-    return response()->json([
-        'post' => $videoPost,
-        
-    ]);
+  // Return all video post data along with the media URLs in random order
+  return response()->json([
+      'posts' => $shuffledPosts,
+  ]);
 }
+
 
 
 
