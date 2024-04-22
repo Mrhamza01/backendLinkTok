@@ -354,42 +354,51 @@ class postsController extends Controller
 
 
     public function share(Request $request)
-{
-    // Validate the request data
-    $validator = Validator::make($request->all(), [
-        'post_id' => 'required|exists:posts,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
-    }
-
-    $postId = $request->post_id;
-    $user = auth()->user();
-
-    // Perform operations within a database transaction
-    DB::transaction(function () use ($postId, $user) {
-        // Check if the post exists
-        $post = Post::find($postId);
-        if (!$post) {
-            throw new \Exception('Post not found');
-        }
-
-        // Save in the shares table
-        $share = new Share([
-            'user_id' => $user->id,
-            'post_id' => $postId,
+    {
+        // Validate the request data
+        $validator = Validator::make($request->all(), [
+            'post_id' => 'required|exists:posts,id',
         ]);
-        $share->save();
-
-        // Increment the shares column for the post
-        $post->increment('shares');
-
-    });
-
-    return response()->json(['success' => 'Post shared successfully']);
-}
-
+    
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
+        }
+    
+        $postId = $request->post_id;
+        $user = auth()->user();
+    
+        // Check if the user has already shared this post
+        $existingShare = Share::where('user_id', $user->id)
+            ->where('post_id', $postId)
+            ->first();
+    
+        if ($existingShare) {
+            // User has already shared this post, no need to add a new entry
+            return response()->json(['success' => 'Post already shared by this user']);
+        }
+    
+        // Perform operations within a database transaction
+        DB::transaction(function () use ($postId, $user) {
+            // Check if the post exists
+            $post = Post::find($postId);
+            if (!$post) {
+                throw new \Exception('Post not found');
+            }
+    
+            // Save in the shares table
+            $share = new Share([
+                'user_id' => $user->id,
+                'post_id' => $postId,
+            ]);
+            $share->save();
+    
+            // Increment the shares column for the post
+            $post->increment('shares');
+        });
+    
+        return response()->json(['success' => 'Post shared successfully']);
+    }
+    
 
 
 
