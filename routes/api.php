@@ -6,8 +6,9 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\postsController;
 use App\Http\Controllers\API\FollowController;
 use App\Http\Controllers\API\storyController;
-
+use App\Http\Controllers\API\analyticsController;
 use App\Http\Controllers\API\AdminController;
+
 
 
 Route::post('register',[UserController::class, 'register']);
@@ -36,7 +37,9 @@ Route::middleware('auth:api')
         Route::get('countcomments',[postsController::class, 'countComments']);
         Route::get('viewcomments',[postsController::class, 'viewcomments']);
         Route::get('getforyouvideos', [postsController::class, 'getForYouVideos']);
-
+        Route::post('share', [postsController::class, 'share']);
+        Route::get('getpost', [postsController::class, 'getpost']);
+        Route::post('createimpression', [postsController::class, 'createImpression']);
 
 
 
@@ -54,6 +57,11 @@ Route::middleware('auth:api')
         Route::get('getfollowers', [FollowController::class, 'getFollowers']);
         
 
+        //analytics contrller routes
+        Route::get('getAllLikes', [analyticsController::class, 'getAllLikes']);
+        Route::get('getallcomments', [analyticsController::class, 'getAllComments']);
+        Route::get('getallshares', [analyticsController::class, 'getAllShares']);
+        Route::get('getallimpressions', [analyticsController::class, 'getAllImpressions']);
     });
 
 
