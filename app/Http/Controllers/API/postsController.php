@@ -15,10 +15,10 @@ use App\Models\Like;
 use App\Models\Share;
 use App\Models\comment;
 use App\Models\Impression;
-
+use Carbon\Carbon;
 use App\Models\Userpost;
+use App\Jobs\schedulePost;
 
-use Illuminate\Support\Str;
 
 class postsController extends Controller
 {
@@ -26,79 +26,102 @@ class postsController extends Controller
 {
     // Retrieve the authenticated user based on the token
     $user = Auth::user();
-
+    
     if (!$user) {
         return response()->json(['error' => 'User not found'], 404);
     }
-
+    
     // Validate the request
     $validator = Validator::make($request->all(), [
         'caption' => 'required|string',
         'media' => 'required|file|max:20480', // 20MB Max
+        'dateTime' => 'nullable|date_format:Y-m-d\TH:i', // Optional, validate DateTime format
     ]);
-
+    
     if ($validator->fails()) {
         return response()->json($validator->errors(), 422);
     }
-
+    
+    // Check if DateTime is provided and if it's in the past
+    if ($request->has('dateTime') && !empty($request->dateTime)) {
+        $selectedDateTime = Carbon::createFromFormat('Y-m-d\TH:i', $request->dateTime);
+        $now = Carbon::now();
+        if ($selectedDateTime->lt($now)) {
+            return response()->json(['error' => 'Select future date and time'], 422);
+        } else {
+            // If future date and time, set scheduledAt and is_scheduled
+            $isScheduled = true;
+            $scheduledAt = $selectedDateTime;
+        }
+    } else {
+        // If no dateTime provided or it's empty, set scheduledAt to current date and time and is_scheduled to false
+        $isScheduled = false;
+        $scheduledAt = Carbon::now();
+    }
+    
     // Extract hashtags from caption
     $caption = $request->caption;
     $tags = [];
     preg_match_all('/#(\w+)/', $caption, $tags);
-
+    
     // Remove hashtags from caption
     $caption = preg_replace('/#(\w+)/', '', $caption);
-
+    
     // Begin a transaction
     DB::beginTransaction();
-
+    
     try {
-        $post = new Post(); // Correct capitalization
+        $post = new Post();
         $post->userId = $user->id;
         $post->caption = $caption;
         $post->tags = implode(',', $tags[1]); // Save tags as comma-separated values
-        $post->is_scheduled = false; // Assuming posts are not scheduled by default
-
+        $post->is_scheduled = $isScheduled; // Set is_scheduled based on the condition
+        $post->scheduledAt = $scheduledAt; // Set scheduledAt based on the condition
+    
         // Check if media is provided
         if ($request->hasFile('media')) {
             $media = $request->file('media');
             $mediaName = time() . '.' . $media->getClientOriginalExtension();
             $folder = "/{$user->id}/posts";
-
+    
             // Store the file in the local storage
             Storage::disk('public')->putFileAs($folder, $media, $mediaName);
-
+    
             // Determine the media type based on MIME type
             $mediaType = $media->getMimeType();
             $post->postType = strpos($mediaType, 'image') !== false ? 'photo' : 'video';
             $post->media = $mediaName;
         }
-
+    
         // Save the post
         $post->save();
-
+    
         // Now, store the user_id and post_id in the userposts table
-        $userPost = new UserPost(); // Assuming you have a UserPost model
+        $userPost = new UserPost();
         $userPost->user_id = $user->id;
-        $userPost->post_id = $post->id; // post_id is automatically set when the post is saved
+        $userPost->post_id = $post->id;
         $userPost->save();
-
+    
         // Commit the transaction
         DB::commit();
+        schedulePost::dispatch()->delay(now()->addMinute());
 
         return response()->json(['message' => 'Post created successfully!'], 201);
     } catch (\Exception $e) {
         // Rollback the transaction
         DB::rollBack();
-
+    
         // Delete the media if it was stored
         if (isset($mediaName)) {
-            Storage::disk('local')->delete("{$folder}/{$mediaName}");
+            Storage::disk('public')->delete("{$folder}/{$mediaName}");
         }
-
+    
         return response()->json(['message' => 'Failed to create post', 'error' => $e->getMessage()], 500);
     }
 }
+
+    
+    
 
 
 
@@ -125,8 +148,8 @@ class postsController extends Controller
         }
 
         // Check if the post is blocked
-        if ($post->isblocked) {
-            return response()->json(['error' => 'Post is blocked'], 403);
+        if ($post->isblocked || $post->is_scheduled) {
+            return response()->json(['error' => 'Post is blocked or scheduled'], 403);
         }
 
         // Add the full URL for the media file
@@ -150,9 +173,12 @@ class postsController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
     
-        // Retrieve all posts from the authenticated user that are not blocked
-        $posts = Post::where('userId', $user->id)->where('isblocked', false)->get();
-    
+                // Retrieve all posts from the authenticated user that are not blocked and not scheduled
+            $posts = Post::where('userId', $user->id)
+            ->where('isblocked', false)
+            ->where('is_scheduled', false) // Add this line to filter out scheduled posts
+            ->get();
+            
         // Check if the user has posts
         if ($posts->isEmpty()) {
             return response()->json(['message' => 'No posts found for this user'], 404);
@@ -197,7 +223,7 @@ class postsController extends Controller
             $post = Post::find($entry->post_id); // Assuming you have a Post model
     
             // Check if the user and post exist and the post is not blocked
-            if ($user && $post && !$post->isblocked) {
+            if ($user && $post && !$post->isblocked && !$post->is_is_scheduled) {
                 // Create the media URL
                 $mediaUrl = asset("storage/{$user->id}/posts/" . $post->media);
     
@@ -211,6 +237,7 @@ class postsController extends Controller
                     'username' => $username,
                     'profile_picture' => $profilePicture,
                     'post_id' => $post->id,
+                    'postType'=>$post->postType,
                     'likes' => $post->likes,
                     'comments' => $post->comments,
                     'mediaURL' => $mediaUrl,

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_Id');
             $table->string('media');
-            $table->dateTimeTz('expiresAt');
+            $table->enum('storyType', ['photo', 'video'])->nullable();
             $table->timestamps();
       
 
