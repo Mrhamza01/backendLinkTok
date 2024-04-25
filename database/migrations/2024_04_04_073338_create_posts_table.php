@@ -26,6 +26,7 @@ return new class extends Migration
             $table->integer('comments')->default(0);
             $table->integer('shares')->default(0);
             $table->integer('impressions')->default(0);
+            $table->integer('views')->default(0);
             $table->boolean('isblocked')->default(false);
             $table->timestamps();
         

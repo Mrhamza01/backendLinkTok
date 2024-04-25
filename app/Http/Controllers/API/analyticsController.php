@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class analyticsController extends Controller
 {
     //
-    public function getAllLikes(Request $request)
+    public function getAllLikes()
     {
         // Get the authenticated user's ID
         $userId = Auth::id();
@@ -28,7 +28,7 @@ class analyticsController extends Controller
 
 
 
-    public function getAllComments(Request $request)
+    public function getAllComments()
     {
         // Get the authenticated user's ID
         $userId = Auth::id();
@@ -48,7 +48,7 @@ class analyticsController extends Controller
         return response()->json(['totalComments' => $totalComments]);
     }
 
-    public function getAllShares(Request $request)
+    public function getAllShares()
     {
         $userId = Auth::id();
     
@@ -61,7 +61,7 @@ class analyticsController extends Controller
         return response()->json(['totalShares' => $totalShares]);
     }
     
-    public function getAllImpressions(Request $request)
+    public function getAllImpressions()
     {
         $userId = Auth::id();
     
@@ -72,6 +72,20 @@ class analyticsController extends Controller
         $totalImpressions = $posts->sum('impressions');
     
         return response()->json(['totalImpressions' => $totalImpressions]);
+    }
+
+
+    public function getAllViews()
+    {
+        $userId = Auth::id();
+    
+        $posts = Post::where('userId', $userId)
+            ->where('isblocked', false)
+            ->get();
+    
+        $totalViews = $posts->sum('views');
+    
+        return response()->json(['totalViews' => $totalViews]);
     }
 
 }

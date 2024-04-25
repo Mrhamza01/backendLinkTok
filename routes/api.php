@@ -30,6 +30,8 @@ Route::middleware('auth:api')
         //post routes
         Route::post('createpost',[postsController::class, 'createPost']);
         Route::get('getuserposts',[postsController::class, 'getUserPosts']);
+        Route::post('updatepost',[postsController::class, 'updatePost']);
+        Route::post('deletepost',[postsController::class, 'deletePost']);
         Route::get('viewfollowingpost',[postsController::class, 'viewFollowingPost']);
         Route::post('likepost',[postsController::class, 'likePost']);
         Route::get('countlikes',[postsController::class, 'countLikes']);
@@ -40,7 +42,7 @@ Route::middleware('auth:api')
         Route::post('share', [postsController::class, 'share']);
         Route::get('getpost', [postsController::class, 'getpost']);
         Route::post('createimpression', [postsController::class, 'createImpression']);
-
+        Route::post('createview', [postsController::class, 'createView']);
 
 
         //storyController routes
@@ -62,6 +64,7 @@ Route::middleware('auth:api')
         Route::get('getallcomments', [analyticsController::class, 'getAllComments']);
         Route::get('getallshares', [analyticsController::class, 'getAllShares']);
         Route::get('getallimpressions', [analyticsController::class, 'getAllImpressions']);
+        Route::get('getallviews', [analyticsController::class, 'getAllViews']);
     });
 
 
