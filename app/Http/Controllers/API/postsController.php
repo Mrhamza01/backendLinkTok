@@ -17,6 +17,7 @@ use App\Models\comment;
 use App\Models\Impression;
 use Carbon\Carbon;
 use App\Models\Userpost;
+use App\Models\View;
 use App\Jobs\schedulePost;
 
 
@@ -123,8 +124,142 @@ class postsController extends Controller
     
     
 
+public function updatePost(Request $request)
+{
+    // Retrieve the authenticated user based on the token
+    $user = Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+
+    // Validate the request
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|integer|exists:posts,id',
+        'caption' => 'string|nullable',
+        'media' => 'file|max:20480|nullable', // 20MB Max
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Find the post by ID
+    $post = Post::find($request->post_id);
+
+    if (!$post || $post->userId != $user->id) {
+        return response()->json(['error' => 'Post not found or user does not have permission to update this post'], 403);
+    }
+    DB::beginTransaction();
+    // Extract hashtags from caption if provided
+    if ($request->has('caption')) {
+        $caption = $request->caption;
+        $tags = [];
+        preg_match_all('/#(\w+)/', $caption, $tags);
+
+        // Remove hashtags from caption
+        $caption = preg_replace('/#(\w+)/', '', $caption);
+        $post->caption = $caption;
+        $post->tags = implode(',', $tags[1]); // Save tags as comma-separated values
+    }
+
+    // Begin a transaction
+   
+
+    try {
+        // Check if media is provided
+        if ($request->hasFile('media')) {
+            // Delete old media if exists
+            if ($post->media) {
+                Storage::disk('public')->delete("/{$user->id}/posts/{$post->media}");
+            }
+
+            $media = $request->file('media');
+            $mediaName = time() . '.' . $media->getClientOriginalExtension();
+            $folder = "/{$user->id}/posts";
+
+            // Store the new file in the local storage
+            Storage::disk('public')->putFileAs($folder, $media, $mediaName);
+
+            // Determine the media type based on MIME type
+            $mediaType = $media->getMimeType();
+            $post->postType = strpos($mediaType, 'image') !== false ? 'photo' : 'video';
+            $post->media = $mediaName;
+        }
+
+        // Save the updated post
+        $post->save();
+
+        // Commit the transaction
+        DB::commit();
+
+        return response()->json(['message' => 'Post updated successfully!'], 200);
+    } catch (\Exception $e) {
+        // Rollback the transaction
+        DB::rollBack();
+
+        // Delete the new media if it was stored
+        if (isset($mediaName)) {
+            Storage::disk('public')->delete("{$folder}/{$mediaName}");
+        }
+
+        return response()->json(['message' => 'Failed to update post', 'error' => $e->getMessage()], 500);
+    }
+}
 
 
+public function deletePost(Request $request)
+{
+    // Retrieve the authenticated user based on the token
+    $user = Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+
+    // Validate the request
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|integer|exists:posts,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Find the post by ID
+    $post = Post::find($request->post_id);
+
+    if (!$post) {
+        return response()->json(['error' => 'Post not found'], 404);
+    }
+
+    if ($post->userId != $user->id) {
+        return response()->json(['error' => 'User does not have permission to delete this post'], 403);
+    }
+
+    // Begin a transaction
+    DB::beginTransaction();
+
+    try {
+        // Delete the media associated with the post
+        if ($post->media) {
+            Storage::disk('public')->delete("/{$user->id}/posts/{$post->media}");
+        }
+
+        // Delete the post
+        $post->delete();
+
+        // Commit the transaction
+        DB::commit();
+
+        return response()->json(['message' => 'Post deleted successfully'], 200);
+    } catch (\Exception $e) {
+        // Rollback the transaction
+        DB::rollBack();
+
+        return response()->json(['message' => 'Failed to delete post', 'error' => $e->getMessage()], 500);
+    }
+}
 
 
 
@@ -305,7 +440,8 @@ class postsController extends Controller
 
 
 
-    function createComment(Request $request){
+    function createComment(Request $request)
+    {
         // Validate the request data
         $validator = Validator::make($request->all(), [
             'post_id' => 'required|exists:posts,id',
@@ -319,11 +455,11 @@ class postsController extends Controller
         $postId = $request->post_id;
 
         // Check if the post exists
-    $post = Post::find($postId);
+        $post = Post::find($postId);
 
-    if (!$post) {
-        return response()->json(['error' => 'Post not found'], 404);
-    }
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
         try {
             // Create the comment
             $comment = Comment::create([
@@ -467,6 +603,42 @@ public function createImpression(Request $request)
     return response()->json(['message' => 'impressions created successfully']);
 }
 
+public function createView(Request $request)
+{
+    // Validate the request data
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|exists:posts,id',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['error' => 'Validation error', 'message' => $validator->errors()], 422);
+    }
+
+    $postId = $request->post_id;
+    $user = auth()->user();
+
+    // Perform operations within a database transaction
+    DB::transaction(function () use ($postId, $user) {
+        // Check if the post exists
+        $post = Post::find($postId);
+        if (!$post) {
+            throw new \Exception('Post not found');
+        }
+
+        // Save in the shares table
+        $View = new View([
+            'user_id' => $user->id,
+            'post_id' => $postId,
+        ]);
+        $View->save();
+
+        // Increment the shares column for the post
+        $post->increment('views');
+
+    });
+
+    return response()->json(['message' => 'impressions created successfully']);
+}
 
 public function getForYouVideos()
 {
