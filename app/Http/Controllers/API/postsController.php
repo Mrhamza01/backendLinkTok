@@ -617,28 +617,37 @@ public function createView(Request $request)
     $postId = $request->post_id;
     $user = auth()->user();
 
-    // Perform operations within a database transaction
-    DB::transaction(function () use ($postId, $user) {
-        // Check if the post exists
-        $post = Post::find($postId);
-        if (!$post) {
-            throw new \Exception('Post not found');
-        }
+    try {
+        // Perform operations within a database transaction
+        DB::transaction(function () use ($postId, $user) {
+            // Check if the post exists
+            $post = Post::find($postId);
+            if (!$post) {
+                throw new \Exception('Post not found');
+            }
 
-        // Save in the shares table
-        $View = new View([
-            'user_id' => $user->id,
-            'post_id' => $postId,
-        ]);
-        $View->save();
+            // Save in the views table
+            $view = new View([
+                'user_id' => $user->id,
+                'post_id' => $postId,
+                'viewTime' => '0',
+            ]);
+            $view->save();
 
-        // Increment the shares column for the post
-        $post->increment('views');
+            // Increment the views column for the post
+            $post->increment('views');
+        });
 
-    });
-
-    return response()->json(['message' => 'impressions created successfully']);
+        return response()->json(['message' => 'View created successfully']);
+    } catch (\Exception $e) {
+        // Handle general exceptions
+        return response()->json(['error' => 'Server error', 'message' => $e->getMessage()], 500);
+    } catch (\Throwable $e) {
+        // Handle PHP 7+ errors
+        return response()->json(['error' => 'Unexpected error', 'message' => $e->getMessage()], 500);
+    }
 }
+
 
 public function getForYouVideos()
 {
