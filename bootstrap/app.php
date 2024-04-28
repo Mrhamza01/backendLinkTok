@@ -5,7 +5,9 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\CheckIsAdmin;
 use App\Http\Middleware\ExtractTokenFromCookie;
-use App\Http\Middleware\checkIsBlocked;
+use Illuminate\Console\Scheduling\Schedule;
+
+use App\Console\Commands\UpdateIsScheduled;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,7 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // $middleware->append(CheckIsAdmin::class);
 
     })
-
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command(UpdateIsScheduled::class)->everyMinute();
+    })
     
     ->withExceptions(function (Exceptions $exceptions) {
         //
