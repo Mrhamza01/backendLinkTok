@@ -18,7 +18,7 @@ use App\Models\Impression;
 use Carbon\Carbon;
 use App\Models\Userpost;
 use App\Models\View;
-use App\Jobs\schedulePost;
+use App\Jobs\UpdatePostStatus;
 
 
 class postsController extends Controller
@@ -45,11 +45,12 @@ class postsController extends Controller
     
     // Check if DateTime is provided and if it's in the past
     if ($request->has('dateTime') && !empty($request->dateTime)) {
-        $selectedDateTime = Carbon::createFromFormat('Y-m-d\TH:i', $request->dateTime);
-        $now = Carbon::now();
+        $selectedDateTime = Carbon::createFromFormat('Y-m-d\TH:i', $request->dateTime, 'UTC');
+        $now = Carbon::now('UTC');
         if ($selectedDateTime->lt($now)) {
             return response()->json(['error' => 'Select future date and time'], 422);
         } else {
+            $delayTimeInMinutes = $now->diffInMinutes($selectedDateTime, false);
             // If future date and time, set scheduledAt and is_scheduled
             $isScheduled = true;
             $scheduledAt = $selectedDateTime;
@@ -102,12 +103,16 @@ class postsController extends Controller
         $userPost->user_id = $user->id;
         $userPost->post_id = $post->id;
         $userPost->save();
-    
-        // Commit the transaction
-        DB::commit();
-        schedulePost::dispatch()->delay(now()->addMinute());
 
-        return response()->json(['message' => 'Post created successfully!'], 201);
+        DB::commit();
+        $delayTimeInMinutes = $now->diffInMinutes($selectedDateTime, false);
+        UpdatePostStatus::dispatch()->delay(now()->addMinutes($delayTimeInMinutes));
+       
+        
+  
+
+        return response()->json(['message' => 'Post created successfully!',
+    'delayTimeInMinutes' => $delayTimeInMinutes], 201);
     } catch (\Exception $e) {
         // Rollback the transaction
         DB::rollBack();
@@ -358,7 +363,7 @@ public function deletePost(Request $request)
             $post = Post::find($entry->post_id); // Assuming you have a Post model
     
             // Check if the user and post exist and the post is not blocked
-            if ($user && $post && !$post->isblocked && !$post->is_is_scheduled) {
+            if ($user && $post && !$post->isblocked && !$post->is_scheduled) {
                 // Create the media URL
                 $mediaUrl = asset("storage/{$user->id}/posts/" . $post->media);
     
