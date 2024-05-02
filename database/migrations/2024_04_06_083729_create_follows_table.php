@@ -21,7 +21,7 @@ return new class extends Migration {
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('target_id')->references('id')->on('users')->onDelete('cascade');
-            $table->check('user_id != target_id');
+          
             $table->unique(['user_id', 'target_id']);
         });
 
