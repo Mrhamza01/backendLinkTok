@@ -21,12 +21,11 @@ return new class extends Migration {
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('target_id')->references('id')->on('users')->onDelete('cascade');
-
+          
             $table->unique(['user_id', 'target_id']);
         });
 
-        // Add a check constraint using raw SQL
-        DB::statement('ALTER TABLE follows ADD CHECK (user_id != target_id)');
+       
     }
 
     /**
