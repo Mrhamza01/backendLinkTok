@@ -43,6 +43,7 @@ class postsController extends Controller
         return response()->json($validator->errors(), 422);
     }
     
+    
     // Check if DateTime is provided and if it's in the past
     if ($request->has('dateTime') && !empty($request->dateTime)) {
         $selectedDateTime = Carbon::createFromFormat('Y-m-d\TH:i', $request->dateTime, 'UTC');
@@ -105,8 +106,8 @@ class postsController extends Controller
         $userPost->save();
 
         DB::commit();
-        $delayTimeInMinutes = $now->diffInMinutes($selectedDateTime, false);
-        UpdatePostStatus::dispatch()->delay(now()->addMinutes($delayTimeInMinutes));
+        // $delayTimeInMinutes = $now->diffInMinutes($selectedDateTime, false);
+        // UpdatePostStatus::dispatch()->delay(now()->addMinutes($delayTimeInMinutes));
        
         
   
