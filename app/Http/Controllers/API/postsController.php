@@ -112,8 +112,7 @@ class postsController extends Controller
         
   
 
-        return response()->json(['message' => 'Post created successfully!',
-    'delayTimeInMinutes' => $delayTimeInMinutes], 201);
+        return response()->json(['message' => 'Post created successfully!'],201);
     } catch (\Exception $e) {
         // Rollback the transaction
         DB::rollBack();
@@ -381,10 +380,11 @@ public function deletePost(Request $request)
                     'postType'=>$post->postType,
                     'likes' => $post->likes,
                     'comments' => $post->comments,
+                    'shares' => $post->shares,
                     'mediaURL' => $mediaUrl,
                     'profilePictureUrl' => $profilePictureUrl,
-                    'like_count' => $post->likes,
-                    'comment_count' => $post->comments,
+                    // 'like_count' => $post->likes,
+                    // 'comment_count' => $post->comments,
                 ];
             }
         }
